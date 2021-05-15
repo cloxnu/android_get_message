@@ -34,5 +34,16 @@ public class ReceiveSms extends BroadcastReceiver {
 
     private void MessageProcess(Context context, String msg_from, String msg_body) {
         Toast.makeText(context, msg_body + ", From: " + msg_from, Toast.LENGTH_SHORT).show();
+//        MainActivity mainActivity = (MainActivity) context;
+        String[] items = msg_body.split(",");
+        for (String item : items) {
+            String key = item.split(":")[0];
+            String val = item.split(":")[1];
+            int i = 0;
+            while (i < val.length() && (Character.isDigit(val.charAt(i)) || val.charAt(i) == '.')) i++;
+//            Float value = Float.parseFloat(val.substring(0, i));
+            Toast.makeText(context, val.substring(0, i), Toast.LENGTH_SHORT).show();
+//            mainActivity.addData(key, Float.parseFloat(val.substring(0, i)));
+        }
     }
 }
