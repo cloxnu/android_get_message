@@ -9,7 +9,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Rn_proj">
+        android:theme="@style/Theme.Android_get_message">
         <activity android:name="com.example.android_get_message.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
