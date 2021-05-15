@@ -1,4 +1,4 @@
-package com.example.rn_proj;
+package com.example.android_get_message;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

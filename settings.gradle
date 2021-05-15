@@ -1,2 +1,2 @@
 include ':app'
-rootProject.name = "rn_proj"
+rootProject.name = "android_get_message"
