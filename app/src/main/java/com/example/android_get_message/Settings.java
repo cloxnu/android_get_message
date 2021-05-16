@@ -1,20 +1,38 @@
 package com.example.android_get_message;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import java.util.Set;
+
 public class Settings {
+    private static Settings settings;
     private final SharedPreferences preferences;
 
     private String allowMessageFrom;
     private boolean displayMessageToast;
 
-    public Settings(Context context) {
-        preferences = context.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE);
+    private Settings(Context context) {
+        preferences = context.getApplicationContext().getSharedPreferences("MyPreferences", Context.MODE_PRIVATE);
 
         allowMessageFrom = preferences.getString("allowMessageFrom", null);
         displayMessageToast = preferences.getBoolean("displayMessageToast", true);
     }
+
+    public static Settings getInstance(Context context) {
+        if (settings == null) {
+            settings = new Settings(context);
+        }
+        return settings;
+    }
+
+    public static Settings getInstance() {
+        return settings;
+    }
+
+
+    // Getter and Setter
 
     public String getAllowMessageFrom() {
         return allowMessageFrom;

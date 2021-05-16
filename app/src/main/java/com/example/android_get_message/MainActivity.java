@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -23,6 +24,7 @@ import com.github.mikephil.charting.data.LineDataSet;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
     IntentFilter filter;
@@ -64,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
                 String val = item.split(":")[1];
                 int i = 0;
                 while (i < val.length() && (Character.isDigit(val.charAt(i)) || val.charAt(i) == '.')) i++;
-                addData(key, dataCount, Float.parseFloat(val.substring(0, i)));
+                addData(key, dataCount, Float.parseFloat(val.substring(0, i)), val);
             }
             dataCount++;
         }
@@ -73,13 +75,14 @@ public class MainActivity extends AppCompatActivity {
     private Settings settings;
     public LineChart lineChart;
     private final HashMap<String, LineDataSet> lineDataSetHashMap = new HashMap<>();
+    private float currentColorHue = -1;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        settings = new Settings(this);
+        settings = Settings.getInstance(this);
 
         lineChart = findViewById(R.id.chart);
 
@@ -98,17 +101,26 @@ public class MainActivity extends AppCompatActivity {
 //        lineChart.invalidate();
     }
 
-    public void addData(String key, int t, Float val) {
+    public void addData(String key, int t, Float val, Object desc) {
         System.out.println("key: " + key + ", val: " + val);
         LineDataSet dataSet = lineDataSetHashMap.get(key);
         if (dataSet == null) {
             ArrayList<Entry> values = new ArrayList<>();
-            values.add(new Entry(dataCount, val));
+//            values.add(new Entry(dataCount, val, desc));
             LineDataSet newDataSet = new LineDataSet(values, key);
+            Random random = new Random();
+            if (currentColorHue == -1)
+                currentColorHue = random.nextFloat() * 360;
+            currentColorHue += random.nextFloat() * 30 + 30;
+            currentColorHue %= 360;
+            int color = Color.HSVToColor(new float[] {currentColorHue, 0.8f, 0.8f});
+//            Color.BLACK, Color.BLUE, Color.CYAN, Color.DKGRAY, Color.GRAY, Color.GREEN, Color.LTGRAY, Color.MAGENTA, Color.RED, Color.WHITE, Color.YELLOW
+            newDataSet.setColor(color);
+            newDataSet.setCircleColor(color);
             lineDataSetHashMap.put(key, newDataSet);
             dataSet = newDataSet;
         }
-        dataSet.addEntry(new Entry(t, val));
+        dataSet.addEntry(new Entry(t, val, desc));
 
         LineData data = new LineData(new ArrayList<>(lineDataSetHashMap.values()));
         lineChart.setData(data);
