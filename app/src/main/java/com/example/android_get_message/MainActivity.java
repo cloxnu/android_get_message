@@ -7,11 +7,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
@@ -19,20 +21,19 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     IntentFilter filter;
+    int dataCount = 0;
 
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals("android.provider.Telephony.SMS_RECEIVED")) {
                 Bundle bundle = intent.getExtras();
-                SmsMessage[] messages = null;
+                SmsMessage[] messages;
                 String msg_from;
                 if (bundle != null) {
                     try {
@@ -52,31 +53,33 @@ public class MainActivity extends AppCompatActivity {
         }
 
         private void MessageProcess(Context context, String msg_from, String msg_body) {
-            Toast.makeText(context, msg_body + ", From: " + msg_from, Toast.LENGTH_SHORT).show();
-//        MainActivity mainActivity = (MainActivity) context;
+            if (settings.getAllowMessageFrom() != null && !msg_from.equals(settings.getAllowMessageFrom()))
+                return;
+            if (settings.isDisplayMessageToast())
+                Toast.makeText(context, msg_body + ", From: " + msg_from, Toast.LENGTH_SHORT).show();
+
             String[] items = msg_body.split(",");
             for (String item : items) {
                 String key = item.split(":")[0];
                 String val = item.split(":")[1];
                 int i = 0;
                 while (i < val.length() && (Character.isDigit(val.charAt(i)) || val.charAt(i) == '.')) i++;
-//            Float value = Float.parseFloat(val.substring(0, i));
-//                Toast.makeText(context, val.substring(0, i), Toast.LENGTH_SHORT).show();
-                addData(key, Float.parseFloat(val.substring(0, i)));
-//            mainActivity.addData(key, Float.parseFloat(val.substring(0, i)));
+                addData(key, dataCount, Float.parseFloat(val.substring(0, i)));
             }
+            dataCount++;
         }
     };
 
+    private Settings settings;
     public LineChart lineChart;
-    private HashMap<String, LineDataSet> lineDataSetHashMap = new HashMap<String, LineDataSet>();
-    private int dataCount = 0;
+    private final HashMap<String, LineDataSet> lineDataSetHashMap = new HashMap<>();
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        settings = new Settings(this);
 
         lineChart = findViewById(R.id.chart);
 
@@ -86,28 +89,28 @@ public class MainActivity extends AppCompatActivity {
 
         registerReceiver(broadcastReceiver, new IntentFilter("android.provider.Telephony.SMS_RECEIVED"));
 
-        addData("test", 1000f);
+//        addData("test", 1000f);
 
 //        ArrayList<LineDataSet> lineDataSets = new ArrayList<LineDataSet>();
 //        lineDataSets.addAll(lineDataSetHashMap.values());
-//        LineData data = new LineData(lineDataSetHashMap.get("test"));
+//        LineData data = new LineData(new ArrayList<>(lineDataSetHashMap.values()));
 //        lineChart.setData(data);
 //        lineChart.invalidate();
     }
 
-    public void addData(String key, Float val) {
+    public void addData(String key, int t, Float val) {
         System.out.println("key: " + key + ", val: " + val);
         LineDataSet dataSet = lineDataSetHashMap.get(key);
         if (dataSet == null) {
-            ArrayList<Entry> values = new ArrayList<Entry>();
+            ArrayList<Entry> values = new ArrayList<>();
             values.add(new Entry(dataCount, val));
             LineDataSet newDataSet = new LineDataSet(values, key);
             lineDataSetHashMap.put(key, newDataSet);
             dataSet = newDataSet;
         }
-        dataSet.addEntry(new Entry(dataCount, val));
-        dataCount++;
-        LineData data = new LineData(lineDataSetHashMap.get("test"));
+        dataSet.addEntry(new Entry(t, val));
+
+        LineData data = new LineData(new ArrayList<>(lineDataSetHashMap.values()));
         lineChart.setData(data);
         lineChart.invalidate();
     }
@@ -123,6 +126,25 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.id_settings:
+                SettingsActivity activity = new SettingsActivity();
+                Intent intent = new Intent(this, activity.getClass());
+                startActivity(intent);
+                break;
+        }
+
+        return true;
     }
 
     @Override
