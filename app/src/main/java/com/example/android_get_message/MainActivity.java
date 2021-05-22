@@ -15,6 +15,10 @@ import android.os.Bundle;
 import android.telephony.SmsMessage;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.LinearLayout;
+import android.widget.TableLayout;
+import android.widget.TableRow;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
@@ -73,7 +77,9 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private Settings settings;
+    private Analysis analysis = new Analysis();
     public LineChart lineChart;
+    public TableLayout tableLayout;
     private final HashMap<String, LineDataSet> lineDataSetHashMap = new HashMap<>();
     private float currentColorHue = -1;
 
@@ -85,6 +91,8 @@ public class MainActivity extends AppCompatActivity {
         settings = Settings.getInstance(this);
 
         lineChart = findViewById(R.id.chart);
+        tableLayout = findViewById(R.id.table);
+//        tableLayout.addView();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED){
             requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS}, 1000);
@@ -101,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
 //        lineChart.invalidate();
     }
 
-    public void addData(String key, int t, Float val, Object desc) {
+    public void addData(String key, int t, Float val, String desc) {
         System.out.println("key: " + key + ", val: " + val);
         LineDataSet dataSet = lineDataSetHashMap.get(key);
         if (dataSet == null) {
@@ -121,6 +129,33 @@ public class MainActivity extends AppCompatActivity {
             dataSet = newDataSet;
         }
         dataSet.addEntry(new Entry(t, val, desc));
+
+        TextView textView = findViewById(-1000 + t);
+        if (textView == null) {
+            TableRow row = new TableRow(this);
+            tableLayout.addView(row);
+            textView = new TextView(this);
+            textView.setId(-1000 + t);
+            String s = "\n数据 " + t;
+            textView.setText(s);
+            row.addView(textView);
+        }
+        String text = textView.getText() + "\n" + key + ": " + desc;
+        textView.setText(text);
+
+        if (key.equals("PM2.5")) {
+            analysis.pm2_5 = val;
+        } else if (key.equals("PM10")) {
+            analysis.pm10 = val;
+        }
+
+        if (analysis.pm10 != -1 && analysis.pm2_5 != -1) {
+            analysis.calculate();
+            String text2 = textView.getText() + analysis.desc;
+            textView.setText(text2);
+            analysis.pm2_5 = -1;
+            analysis.pm10 = -1;
+        }
 
         LineData data = new LineData(new ArrayList<>(lineDataSetHashMap.values()));
         lineChart.setData(data);
